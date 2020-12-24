@@ -3,7 +3,7 @@
 
 #include <chrono>
 #include <thread>
-
+#include "StatsManager.h"
 #include "Tarjan.h"
 
 const int MAX_WIDTH = 10000;
@@ -286,6 +286,14 @@ ResultCode TestAperiodic(std::vector<Tileset> tilesets, int& maxWidth) {
 		delete[] threads;
 
 		if (mainResult != ResultCode_nothing) {
+			if (mainResult == ResultCode_periodic) {
+				StatsManager::addPeriodicCount();
+			}
+			else
+			{
+				StatsManager::addWithoutTilingCount();
+			}
+
 			delete[] allTilesets;
 			delete[] powers;
 			delete[] toUse;

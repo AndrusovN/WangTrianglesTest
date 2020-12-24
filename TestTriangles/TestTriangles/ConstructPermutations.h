@@ -1,6 +1,6 @@
 #ifndef CONSTRUCT_PERMUTATIONS
 #define CONSTRUCT_PERMUTATIONS
-
+#include "StatsManager.h"
 #include "TriangleSet.h"
 #include <iostream>
 

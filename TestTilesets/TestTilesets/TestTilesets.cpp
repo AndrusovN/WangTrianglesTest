@@ -33,6 +33,9 @@ int main()
 	std::cin >> answer;
 	std::string path;
 	std::vector<Tileset> candidates;
+
+	StatsManager::init();
+
 	switch (answer)
 	{
 	case 0:
@@ -54,6 +57,8 @@ int main()
 	default:
 		break;
 	}
+
+	StatsManager::show();
 
 }
 
@@ -143,6 +148,7 @@ std::vector<Tileset> TestAllFromFile(std::string path)
 		int resultSize = 0;
 		ResultCode result = TestAperiodic(onlyTileset, resultSize);
 
+		StatsManager::changeWidth(resultSize);
 
 		count++;
 		if (count % 1000 == 0) {

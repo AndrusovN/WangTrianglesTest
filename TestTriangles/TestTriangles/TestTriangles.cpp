@@ -17,6 +17,7 @@ void compareAll(std::string firstDir, std::string secondDir, int rightColorsCoun
 int main()
 {
 	setlocale(LC_ALL, "Russian");
+	StatsManager::init();
 	//Получаем основные данные, запускаем проверку
 	std::string path;
 	std::cout << "Введите путь к папке с графами:\n";
@@ -27,9 +28,8 @@ int main()
 	std::cin >> colorsCount;
 
 	testAll(path, colorsCount);
+	StatsManager::show();
 }
-
-int ALLCOUNT = 0;
 
 void testAll(std::string path, int rightColorsCount)
 {
@@ -91,9 +91,6 @@ void testAll(std::string path, int rightColorsCount)
 			}
 		}
 	}
-
-	std::cout << ALLCOUNT << " - RESULT COUNT!!!" << std::endl;
-
 	//Сохраняем все наборы, которые получились
 	saveTriangles(allSets, "res");
 }
@@ -104,8 +101,9 @@ void compareWithGraph(GraphObject current, std::vector<GraphObject> others, std:
 		TriangleSet empty = TriangleSet();
 		empty.rightColorsCount = current.rightColorsCount;
 		empty.triangles.resize(current.rightColorsCount * 2);
-
-		createAllBijections(current, graph2, *result);
+		StatsManager::addChecked();
+		//createAllBijections(current, graph2, *result);
+		checkNextPermutationStep(empty, current, graph2, *result);
 	}
 }
 

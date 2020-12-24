@@ -1,11 +1,13 @@
 ﻿#include <iostream>
 #include "Graph.h"
+#include "StatsManager.h"
 
 void GenerateGraphs(int oneSideColors, int tilesCount);
 
 int main()
 {
     setlocale(LC_ALL, "Russian");
+    StatsManager::init();
 
     std::cout << "Введите количество цветов\n";
     int oneSideColors;
@@ -19,22 +21,19 @@ int main()
     GenerateGraphs(oneSideColors, tilesCount);
 }
 
-int tilesChecked = 0;
-int tilesSaved = 0;
-int uniqueTiles = 0;
-
 void MainFunction(Graph g, int expectedSize, Edge lastAddedEdge = std::make_pair(0, 0)) {
-    tilesChecked++;
-    if (tilesChecked % 65536 == 0) {
+    StatsManager::addGraphsChecked();
+    /*if (tilesChecked % 65536 == 0) {
         Edge e = *g.getEdges().begin();
         std::cout << "Smallest edge: " << e.first << " " << e.second << "\n";
         std::cout << tilesChecked - 1 << " tilesets checked\n";
         std::cout << tilesSaved << " tilesets saved\n";
         std::cout << uniqueTiles << " unique tilesets saved\n\n";
-    }
+    }*/
 
     if (lastAddedEdge.first >= g.getLeftVerticesCount()) {
         if (!g.sortedRight(lastAddedEdge.first - g.getLeftVerticesCount())) {
+            StatsManager::addNotSortedRight();
             return;
         }
     }
@@ -47,12 +46,25 @@ void MainFunction(Graph g, int expectedSize, Edge lastAddedEdge = std::make_pair
                     if (T.toRemove.size() == 0) {
                         //g.save("Graphs");
                         //tilesSaved++;
-                        uniqueTiles++;
+                        StatsManager::addSkeletonGraphsCount();
                         int tilesAdded = g.saveAllVariants(T, expectedSize - g.size(), "FullGraphs");
-                        tilesSaved += tilesAdded;
+                        StatsManager::addGraphsSaved(tilesAdded);
+                    }
+                    else
+                    {
+                        StatsManager::addNotSCC();
                     }
                 }
+                else
+                {
+                    StatsManager::addTooSmall();
+                }
             }
+            
+        }
+        else
+        {
+            StatsManager::addNotSorted();
         }
     }
     
@@ -109,8 +121,9 @@ void GenerateGraphs(int oneSideColors, int tilesCount) {
         Graph empty = Graph(leftColors, oneSideColors);
         MainFunction(empty, tilesCount);
         std::cout << "ALL FINISHED\n";
-        std::cout << tilesChecked << " tilesets checked\n";
+        /*std::cout << tilesChecked << " tilesets checked\n";
         std::cout << tilesSaved << " tilesets saved\n";
-        std::cout << uniqueTiles << " unique tilesets saved\n\n";
+        std::cout << uniqueTiles << " unique tilesets saved\n\n";*/
+        StatsManager::show();
     }
 }

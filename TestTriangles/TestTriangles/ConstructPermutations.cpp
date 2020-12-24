@@ -1,6 +1,5 @@
 #include "ConstructPermutations.h"
 #include "Square.h"
-
 #include <fstream>
 #include <assert.h>
 #include <sstream>
@@ -93,6 +92,7 @@ TriangleSet genSetFromBijection(GraphObject first, GraphObject second, std::vect
 		t.type = (TriangleType)(index % 2);
 
 		if (result.triangles[index].find(t) != result.triangles[index].end()) {
+			StatsManager::addTooSmallTriangles();
 			return TriangleSet();
 		}
 
@@ -138,17 +138,19 @@ void createAllBijections(GraphObject first, GraphObject second, std::vector<Tria
 
 	for (auto bijection : allBijections)
 	{
+		StatsManager::addChecked();
 		TriangleSet T = genSetFromBijection(first, second, bijection);
 		if (T.rightColorsCount == 0) {
 			continue;
 		}
 		if (T.isSimplePeriodic()) {
+			StatsManager::addTriviallyPeriodic();
 			continue;
 		}
 		allSets.push_back(T);
-		if (allSets.size() % 10000 == 0) {
+		/*if (allSets.size() % 10000 == 0) {
 			std::cout << "saved " << allSets.size() << " tilesets\n";
-		}
+		}*/
 	}
 }
 
@@ -166,7 +168,7 @@ void checkNextPermutationStep(TriangleSet current,
 		a += first.edges[i].size();
 	}*/
 	//std::cout << a << std::endl;
-
+	StatsManager::addChecked();
 	Color workingIndex;
 	if (first.firstNotEmptyVertex % 2 == currentType) {
 		workingIndex = first.firstNotEmptyVertex;
@@ -194,6 +196,7 @@ void checkNextPermutationStep(TriangleSet current,
 
 
 		if (current.triangles[workingIndex].find(t) != current.triangles[workingIndex].end()) {
+			StatsManager::addTooSmallTriangles();
 			continue;
 		}
 
@@ -201,6 +204,7 @@ void checkNextPermutationStep(TriangleSet current,
 
 		if (current.isSimplePeriodic(workingIndex / 2)) {
 			current.triangles[workingIndex].erase(t);
+			StatsManager::addTriviallyPeriodic();
 			continue;
 		}
 
@@ -222,7 +226,7 @@ void checkNextPermutationStep(TriangleSet current,
 				if (f.edges[workingIndex].size() == 0) {
 					if (1 + workingIndex / 2 == f.rightColorsCount) {
 						allSets.push_back(current);
-						std::cout << allSets.size() << "\n";
+						//std::cout << allSets.size() << "\n";
 						return;
 					}
 					else
@@ -258,8 +262,8 @@ void checkNextPermutationStep(TriangleSet current,
 					if (f.rightColorsCount == 1 + workingIndex / 2) {
 						allSets.push_back(current);
 						if (allSets.size() % 10000 == 0) {
-							std::cout << current.size() << " - tileset size\n";
-							std::cout << "saved " << allSets.size() << " tilesets\n";
+							//std::cout << current.size() << " - tileset size\n";
+							//std::cout << "saved " << allSets.size() << " tilesets\n";
 						}
 						return;
 					}
@@ -303,7 +307,7 @@ void saveTriangles(std::vector<TriangleSet> allSets, std::string path)
 
 	for (TriangleSet T : allSets)
 	{
-
+		StatsManager::addSaved();
 		std::set<Square> tileset;
 		count++;
 		for (Color i = 0; i < T.rightColorsCount; i++)
@@ -318,14 +322,21 @@ void saveTriangles(std::vector<TriangleSet> allSets, std::string path)
 					s.sides[1] = tr2.left;
 					s.sides[2] = tr1.top;
 					s.sides[3] = tr2.top;
-
+					
 					tileset.insert(s);
 				}
 			}
 			
 		}
 		if (tileset.size() >= 11) {
+			if (tilesets.find(tileset) != tilesets.end()) {
+				StatsManager::addAlreadyFound();
+			}
 			tilesets.insert(tileset);
+		}
+		else
+		{
+			StatsManager::addTooSmallSquares();
 		}
 		/*if (count > 1024) {
 			count = 0;
@@ -348,6 +359,7 @@ void saveTriangles(std::vector<TriangleSet> allSets, std::string path)
 
 	for (auto tileset : tilesets)
 	{
+		StatsManager::addSavedSquare();
 		for (Square s : tileset)
 		{
 			resultFile << s.sides[0] << " " << s.sides[1] << " " << s.sides[2] << " " << s.sides[3] << " ";
