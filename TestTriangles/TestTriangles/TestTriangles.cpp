@@ -88,7 +88,7 @@ void testAll(std::string path, int rightColorsCount)
 				fdir /= std::filesystem::path(*ptr);
 
 				std::filesystem::path sdir = folder.path();
-				fdir /= std::filesystem::path(*s_ptr);
+				sdir /= std::filesystem::path(*s_ptr);
 
 				//std::string fdir = folder.path().string() + "\\" + *ptr;
 				//std::string sdir = folder.path().string() + "\\" + *s_ptr;
