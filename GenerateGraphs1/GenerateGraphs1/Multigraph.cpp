@@ -6,47 +6,6 @@
 #include <cmath>
 #include <vector>
 
-std::set<std::vector<unsigned int>> genAllPermutations(std::set<unsigned int> base, std::vector<unsigned int> fixedBase = std::vector<unsigned int>()) {
-    std::set<std::vector<unsigned int>> results;
-    
-    if (base.size() == 0) {
-        results.insert(fixedBase);
-    }
-
-    for (auto num : base)
-    {
-        auto duplicate = base;
-        duplicate.erase(num);
-        auto baseDup = fixedBase;
-        baseDup.push_back(num);
-        
-        std::set<std::vector<unsigned int>> subfunResults = genAllPermutations(duplicate, baseDup);
-        for (auto vector : subfunResults)
-        {
-            results.insert(vector);
-        }
-    }
-
-    return results;
-}
-
-std::set<std::vector<unsigned int>> genAllCompositions(std::set<std::vector<unsigned int>> a, std::set<std::vector<unsigned int>> b) {
-    std::set<std::vector<unsigned int>> result;
-    
-    for (auto beginning : a)
-    {
-        for (auto ending : b)
-        {
-            auto duplicate = beginning;
-            duplicate.insert(duplicate.end(), ending.begin(), ending.end());
-            result.insert(duplicate);
-        }
-    }
-
-    return result;
-}
-
-
 Multigraph::Multigraph(Graph source)
     : Graph(source.getLeftVerticesCount(), source.getRightVerticesCount())
 {
@@ -67,6 +26,55 @@ Multigraph::Multigraph(Graph source)
         }
     }
 }
+
+void Multigraph::sort()
+{
+    std::map<Vertex, Vertex> mapping = std::map<Vertex, Vertex>();
+
+    for (Vertex i = 0; i < leftVerticesCount; i++)
+    {
+        unsigned int myIndex = 0;
+        for (Vertex j = 0; j < i; j++)
+        {
+            if (!vertexGreater(i, j)) {
+                myIndex++;
+            }
+        }
+        for (Vertex j = i+1; j < leftVerticesCount; j++)
+        {
+            if (vertexGreater(j, i)) {
+                myIndex++;
+            }
+        }
+        mapping.insert(std::make_pair(i, myIndex));
+    }
+
+    for (Vertex i = leftVerticesCount; i < leftVerticesCount + rightVerticesCount; i++)
+    {
+        unsigned int myIndex = leftVerticesCount;
+        for (Vertex j = leftVerticesCount; j < i; j++)
+        {
+            if (!vertexGreater(i, j)) {
+                myIndex++;
+            }
+        }
+        for (Vertex j = i + 1; j < leftVerticesCount + rightVerticesCount; j++)
+        {
+            if (vertexGreater(j, i)) {
+                myIndex++;
+            }
+        }
+        mapping.insert(std::make_pair(i, myIndex));
+    }
+
+
+    remapColors(mapping);
+
+    if (!sorted()) {
+        std::cout << "TROUBLE MUBBLE BUBBLE\n";
+    }
+}
+
 
 void Multigraph::remapColors(std::map<Vertex, Vertex> mapping)
 {
@@ -122,54 +130,6 @@ void Multigraph::remapColors(std::map<Vertex, Vertex> mapping)
     verticesDegrees = nDegrees;
 
     hasChoiceVertices = nHasChoiceVertex;
-}
-
-void Multigraph::sort()
-{
-    std::map<Vertex, Vertex> mapping = std::map<Vertex, Vertex>();
-
-    for (Vertex i = 0; i < leftVerticesCount; i++)
-    {
-        unsigned int myIndex = 0;
-        for (Vertex j = 0; j < i; j++)
-        {
-            if (!vertexGreater(i, j)) {
-                myIndex++;
-            }
-        }
-        for (Vertex j = i+1; j < leftVerticesCount; j++)
-        {
-            if (vertexGreater(j, i)) {
-                myIndex++;
-            }
-        }
-        mapping.insert(std::make_pair(i, myIndex));
-    }
-
-    for (Vertex i = leftVerticesCount; i < leftVerticesCount + rightVerticesCount; i++)
-    {
-        unsigned int myIndex = leftVerticesCount;
-        for (Vertex j = leftVerticesCount; j < i; j++)
-        {
-            if (!vertexGreater(i, j)) {
-                myIndex++;
-            }
-        }
-        for (Vertex j = i + 1; j < leftVerticesCount + rightVerticesCount; j++)
-        {
-            if (vertexGreater(j, i)) {
-                myIndex++;
-            }
-        }
-        mapping.insert(std::make_pair(i, myIndex));
-    }
-
-
-    remapColors(mapping);
-
-    if (!sorted()) {
-        std::cout << "TROUBLE MUBBLE BUBBLE\n";
-    }
 }
 
 std::vector<Multigraph> Multigraph::genAllIsomorphicSortedEqualByLeft()

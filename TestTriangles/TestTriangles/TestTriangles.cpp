@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <thread>
 #include "ConstructPermutations.h"
+#include "Saver.h"
 
 const unsigned int MAX_TILESETS_IN_MEMORY = 1000000;
 
@@ -12,7 +13,7 @@ void testAll(std::string path, int rightColorsCount);
 //графа left1ColorsCount цветов в левой доле, а rightColorsCount в правой, а у второго - аналогично
 //allSets - список наборов, которые из этих графов получились
 void compareAll(std::string firstDir, std::string secondDir, int rightColorsCount, 
-	int left1ColorsCount, int left2ColorsCount, std::vector<TriangleSet>& allSets);
+	int left1ColorsCount, int left2ColorsCount);
 
 int main()
 {
@@ -24,18 +25,18 @@ int main()
 	std::cin >> path;
 
 	int colorsCount;
-	std::cout << "Введите количество правых цветов у графов:\n";
+	std::cout << "Введите количество цветов на правой доле графов:\n";
 	std::cin >> colorsCount;
 
 	testAll(path, colorsCount);
 	StatsManager::show();
+
+	std::cout << "Программа завершена, нажмите любую клавишу" << std::endl;
+	std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }
 
 void testAll(std::string path, int rightColorsCount)
 {
-	//Массив, в котором будут храниться все тайлы, которые нам интересны
-	std::vector<TriangleSet> allSets;
-
 	/* Файлы хранятся так: в основной директории есть папки. Название каждой папки - это
 	перечисленные по очереди входящие и исходящие степени вершин правой доли графов. 
 	Т.к. в паре графов будут объединяться вершины правой доли, эти вектора должны совпадать у графов в паре
@@ -45,7 +46,8 @@ void testAll(std::string path, int rightColorsCount)
 	Очевидно, что в паре графов, которые мы компонуем, первое число каждого графа должно быть не меньше
 	второго числа напарника. А также какое-то из первых чисел должно быть не меньше четырех
 	*/
-
+	std::thread saverProcessThread(Saver::process);
+	saverProcessThread.detach();
 
 	//Идем по всем папкам директории
 	for (const auto & folder : std::filesystem::directory_iterator(path))
@@ -87,12 +89,12 @@ void testAll(std::string path, int rightColorsCount)
 
 
 				//Запускаем проверку всех файлов
-				compareAll(fdir, sdir, rightColorsCount, firstLeftCount, secondLeftCount, allSets);
+				compareAll(fdir, sdir, rightColorsCount, firstLeftCount, secondLeftCount);
 			}
 		}
 	}
-	//Сохраняем все наборы, которые получились
-	saveTriangles(allSets, "res");
+
+	Saver::finish();
 }
 
 void compareWithGraph(GraphObject current, std::vector<GraphObject> others, std::vector<TriangleSet>* result) {
@@ -108,7 +110,7 @@ void compareWithGraph(GraphObject current, std::vector<GraphObject> others, std:
 }
 
 void compareAll(std::string firstDir, std::string secondDir, int rightColorsCount, 
-	int left1ColorsCount, int left2ColorsCount, std::vector<TriangleSet>& allSets)
+	int left1ColorsCount, int left2ColorsCount)
 {
 	std::vector<GraphObject> graphs1, graphs2;
 	for (const auto& file1 : std::filesystem::directory_iterator(firstDir))
@@ -135,7 +137,7 @@ void compareAll(std::string firstDir, std::string secondDir, int rightColorsCoun
 		graphsForElements.push_back(graphs2);
 	}
 
-	while (graphs1.size() > 0)
+	while (graphs1.size() >= 0)
 	{
 		for (int i = 0; i < currentThreads.size(); i++)
 		{
@@ -143,20 +145,24 @@ void compareAll(std::string firstDir, std::string secondDir, int rightColorsCoun
 				currentThreads[i]->join();
 				delete currentThreads[i];
 				currentThreads.erase(currentThreads.begin() + i);
+
 				if (temporaries[i]->size() > 0) {
-					allSets.insert(allSets.end(), temporaries[i]->begin(), temporaries[i]->end());
+					std::thread saveThread(Saver::addToProcessQueue, *temporaries[i]);
+					saveThread.detach();
 				}
+
 				delete temporaries[i];
+
 				temporaries.erase(temporaries.begin() + i);
 				freeGraphs.insert(associated[i]);
 				associated.erase(associated.begin() + i);
-				if (allSets.size() > MAX_TILESETS_IN_MEMORY) {
-					saveTriangles(allSets, "res");
-					std::cout << "Tilesets collection saved and cleared\n";
-					allSets = std::vector<TriangleSet>();
-				}
 			}
 		}
+
+		if (graphs1.size() == 0) {
+			break;
+		}
+
 		while (currentThreads.size() < MAX_THREADS_COUNT && graphs1.size() > 0) {
 			std::vector<TriangleSet>* temp = new std::vector<TriangleSet>();
 
@@ -169,46 +175,7 @@ void compareAll(std::string firstDir, std::string secondDir, int rightColorsCoun
 		}
 	}
 
-	/*for (auto graph1 : graphs1)
-	{
-		int summTime = 0;
-
-		for (auto graph2 : graphs2)
-		{
-			/*std::pair<GraphObject, GraphObject> fs = uploadGraphs(file1.path().string(), 
-				file2.path().string(), rightColorsCount, left1ColorsCount, left2ColorsCount);/*
-			
-			TriangleSet empty = TriangleSet();
-			empty.rightColorsCount = rightColorsCount;
-			empty.triangles.resize(rightColorsCount * 2);
-			long long startTime = std::chrono::duration_cast<std::chrono::microseconds>(
-				std::chrono::system_clock::now().time_since_epoch()).count();
-
-			//checkNextPermutationStep(empty, graph1, graph2, allSets);
-			createAllBijections(graph1, graph2, allSets);
-			long long endTime = std::chrono::duration_cast<std::chrono::microseconds>(
-				std::chrono::system_clock::now().time_since_epoch()).count();
-
-			//Если время, затраченное на вычисления, больше секунды, то стоит вывести информацию
-			int computationalTime = endTime - startTime;
-
-			ALLCOUNT++;
-
-			summTime += computationalTime;
-		}
-
-		if (allSets.size() > MAX_TILESETS_IN_MEMORY) {
-			saveTriangles(allSets, "res");
-			std::cout << "Tilesets collection saved and cleared\n";
-			allSets = std::vector<TriangleSet>();
-		}
-
-		//if (summTime > 1000000) {
-			//std::cout << summTime << std::endl;
-		//}
-	}*/
-
 	std::cout << "finished working with files " << firstDir << " and " << secondDir << std::endl;
-	std::cout << "current size of saved tilesets collection: " << allSets.size() << std::endl;
+	//std::cout << "current size of saved tilesets collection: " << allSets.size() << std::endl;
 
 }

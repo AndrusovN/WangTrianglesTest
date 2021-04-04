@@ -9,6 +9,13 @@
 #include "Tarjan.h"
 
 const int MIN_TILES_COUNT = 11;
+
+std::set<std::vector<unsigned int>> genAllPermutations(std::set<unsigned int> base,
+	std::vector<unsigned int> fixedBase = std::vector<unsigned int>());
+
+std::set<std::vector<unsigned int>> genAllCompositions(std::set<std::vector<unsigned int>> a,
+	std::set<std::vector<unsigned int>> b);
+
 /*
 typedef std::_Tset_traits<Edge, std::less<Edge>, std::allocator<Edge>, false> EdgeTreeElement;
 
@@ -32,6 +39,12 @@ public:
 	Graph(unsigned int leftVerticesCount, unsigned int rightVerticesCount);
 
 	bool vertexGreater(Vertex first, Vertex second) const;
+
+	bool isomorphic(const Graph& other) const;
+
+	std::vector<Graph> genAllIsomorphicSortedEqualByLeft() const;
+
+	virtual void remapColors(std::map<Vertex, Vertex> mapping);
 
 	bool sorted() const;
 

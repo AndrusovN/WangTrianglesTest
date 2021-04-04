@@ -21,15 +21,8 @@ int main()
     GenerateGraphs(oneSideColors, tilesCount);
 }
 
-void MainFunction(Graph g, int expectedSize, Edge lastAddedEdge = std::make_pair(0, 0)) {
+void MainFunction(Graph g, int expectedSize, std::vector<Graph>& savedGraphs, Edge lastAddedEdge = std::make_pair(0, 0)) {
     StatsManager::addGraphsChecked();
-    /*if (tilesChecked % 65536 == 0) {
-        Edge e = *g.getEdges().begin();
-        std::cout << "Smallest edge: " << e.first << " " << e.second << "\n";
-        std::cout << tilesChecked - 1 << " tilesets checked\n";
-        std::cout << tilesSaved << " tilesets saved\n";
-        std::cout << uniqueTiles << " unique tilesets saved\n\n";
-    }*/
 
     if (lastAddedEdge.first >= g.getLeftVerticesCount()) {
         if (!g.sortedRight(lastAddedEdge.first - g.getLeftVerticesCount())) {
@@ -47,8 +40,20 @@ void MainFunction(Graph g, int expectedSize, Edge lastAddedEdge = std::make_pair
                         //g.save("Graphs");
                         //tilesSaved++;
                         StatsManager::addSkeletonGraphsCount();
-                        int tilesAdded = g.saveAllVariants(T, expectedSize - g.size(), "FullGraphs");
-                        StatsManager::addGraphsSaved(tilesAdded);
+
+                        bool alreadySaved = false;
+                        for (Graph G : savedGraphs)
+                        {
+                            if (G.isomorphic(g)) {
+                                alreadySaved = true;
+                                break;
+                            }
+                        }
+                        if (!alreadySaved) {
+                            int tilesAdded = g.saveAllVariants(T, expectedSize - g.size(), "FullGraphs");
+                            savedGraphs.push_back(g);
+                            StatsManager::addGraphsSaved(tilesAdded);
+                        }
                     }
                     else
                     {
@@ -84,7 +89,7 @@ void MainFunction(Graph g, int expectedSize, Edge lastAddedEdge = std::make_pair
         Edge newEdge = std::make_pair(lastAddedEdge.first, u);
         //Graph copy = g.copy();
         g.addEdge(newEdge);
-        MainFunction(g, expectedSize, newEdge);
+        MainFunction(g, expectedSize, savedGraphs, newEdge);
         g.removeEdge(newEdge);
     }
 
@@ -109,7 +114,7 @@ void MainFunction(Graph g, int expectedSize, Edge lastAddedEdge = std::make_pair
         //Graph copy = g.copy();
         //copy.addEdge(newEdge);
         //MainFunction(copy, expectedSize, newEdge);
-        MainFunction(g, expectedSize, newEdge);
+        MainFunction(g, expectedSize, savedGraphs, newEdge);
         g.removeEdge(newEdge);
     }
 
@@ -118,8 +123,10 @@ void MainFunction(Graph g, int expectedSize, Edge lastAddedEdge = std::make_pair
 void GenerateGraphs(int oneSideColors, int tilesCount) {
     for (int leftColors = 2; leftColors <= oneSideColors; leftColors++)
     {
+        std::vector<Graph> savedGraphs;
+
         Graph empty = Graph(leftColors, oneSideColors);
-        MainFunction(empty, tilesCount);
+        MainFunction(empty, tilesCount, savedGraphs);
         std::cout << "ALL FINISHED\n";
         /*std::cout << tilesChecked << " tilesets checked\n";
         std::cout << tilesSaved << " tilesets saved\n";

@@ -13,8 +13,6 @@ void checkNextPermutationStep(TriangleSet current,
 		TriangleType currentType = TriangleType_upward
 	);
 
-void saveTriangles(std::vector<TriangleSet> allSets, std::string path);
-
 GraphObject uploadGraph(std::string path, int rightColorsCount, int leftColorsCount);
 
 std::pair<GraphObject, GraphObject> uploadGraphs(std::string path1,

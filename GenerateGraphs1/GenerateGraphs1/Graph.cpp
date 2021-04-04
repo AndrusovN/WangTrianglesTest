@@ -5,6 +5,51 @@
 #include <filesystem>
 #include <fstream>
 
+
+std::set<std::vector<unsigned int>> genAllPermutations(std::set<unsigned int> base, 
+	std::vector<unsigned int> fixedBase) {
+	std::set<std::vector<unsigned int>> results;
+
+	if (base.size() == 0) {
+		results.insert(fixedBase);
+	}
+
+	for (auto num : base)
+	{
+		auto duplicate = base;
+		duplicate.erase(num);
+		auto baseDup = fixedBase;
+		baseDup.push_back(num);
+
+		std::set<std::vector<unsigned int>> subfunResults = genAllPermutations(duplicate, baseDup);
+		for (auto vector : subfunResults)
+		{
+			results.insert(vector);
+		}
+	}
+
+	return results;
+}
+
+std::set<std::vector<unsigned int>> genAllCompositions(std::set<std::vector<unsigned int>> a, 
+	std::set<std::vector<unsigned int>> b) {
+
+	std::set<std::vector<unsigned int>> result;
+
+	for (auto beginning : a)
+	{
+		for (auto ending : b)
+		{
+			auto duplicate = beginning;
+			duplicate.insert(duplicate.end(), ending.begin(), ending.end());
+			result.insert(duplicate);
+		}
+	}
+
+	return result;
+}
+
+
 Graph::Graph(unsigned int leftVerticesCount, unsigned int rightVerticesCount)
 	: leftVerticesCount(leftVerticesCount), rightVerticesCount(rightVerticesCount)
 {
@@ -35,6 +80,123 @@ bool Graph::vertexGreater(Vertex first, Vertex second) const
 	}
 
 	return false;
+}
+
+bool Graph::isomorphic(const Graph& other) const
+{
+	if (leftVerticesCount != other.leftVerticesCount) return false;
+	if (rightVerticesCount != other.rightVerticesCount) return false;
+	if (edges.size() != other.edges.size()) return false;
+
+	for (int i = 0; i < leftVerticesCount + rightVerticesCount; i++)
+	{
+		if (incomingDegrees[i] != other.incomingDegrees[i]) return false;
+		if (outcomingDegrees[i] != other.outcomingDegrees[i]) return false;
+	}
+
+	std::vector<Graph> isomorphicVariants = genAllIsomorphicSortedEqualByLeft();
+	for (Graph G : isomorphicVariants)
+	{
+		if (G == other) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+std::vector<Graph> Graph::genAllIsomorphicSortedEqualByLeft() const
+{
+	auto result = std::vector<Graph>();
+
+	//result.insert(*this);
+
+	std::vector<std::set<unsigned int>> equivalenceGroups;
+
+	std::set<unsigned int> firstGroup;
+	firstGroup.insert(leftVerticesCount);
+
+	equivalenceGroups.push_back(firstGroup);
+
+	for (int i = leftVerticesCount + 1; i < leftVerticesCount + rightVerticesCount; i++)
+	{
+		if (!vertexGreater(i - 1, i)) {
+			equivalenceGroups.back().insert(i);
+		}
+		else
+		{
+			std::set<unsigned int> newGroup;
+			newGroup.insert(i);
+			equivalenceGroups.push_back(newGroup);
+		}
+	}
+
+	std::vector<std::set<std::vector<unsigned int>>> variants;
+	for (auto group : equivalenceGroups)
+	{
+		variants.push_back(genAllPermutations(group));
+	}
+
+	std::set<std::vector<unsigned int>> allVariants;
+	allVariants.insert(std::vector<unsigned int>());
+
+	for (auto variant : variants)
+	{
+		allVariants = genAllCompositions(allVariants, variant);
+	}
+
+	for (auto variant : allVariants)
+	{
+		std::map<unsigned int, unsigned int> remapping;
+		for (int i = 0; i < leftVerticesCount; i++)
+		{
+			remapping.insert(std::make_pair(i, i));
+		}
+
+		if (variant.size() != rightVerticesCount) {
+			std::cout << "TROUBLES WITH VARIANT SIZE " << variant.size() << " " << rightVerticesCount << std::endl;
+		}
+
+		for (int i = 0; i < variant.size(); i++)
+		{
+			remapping.insert(std::make_pair(variant[i], i + leftVerticesCount));
+		}
+
+		Graph copyG = this->copy();
+
+		copyG.remapColors(remapping);
+		result.push_back(copyG);
+	}
+
+	return result;
+}
+
+void Graph::remapColors(std::map<Vertex, Vertex> mapping)
+{
+	std::set<Edge> nEdges = std::set<Edge>();
+
+	for (auto e : edges)
+	{
+		nEdges.insert(std::make_pair(mapping.at(e.first), mapping.at(e.second)));
+	}
+
+	std::vector<unsigned int> nDegrees, nIncDegrees, nOutcDegrees;
+	nDegrees.resize(leftVerticesCount + rightVerticesCount);
+	nIncDegrees.resize(leftVerticesCount + rightVerticesCount);
+	nOutcDegrees.resize(leftVerticesCount + rightVerticesCount);
+
+	for (Vertex i = 0; i < leftVerticesCount + rightVerticesCount; i++)
+	{
+		nIncDegrees[mapping.at(i)] = incomingDegrees[i];
+		nOutcDegrees[mapping.at(i)] = outcomingDegrees[i];
+		nDegrees[mapping.at(i)] = verticesDegrees[i];
+	}
+
+	edges = nEdges;
+
+	incomingDegrees = nIncDegrees;
+	outcomingDegrees = nOutcDegrees;
+	verticesDegrees = nDegrees;
 }
 
 bool Graph::sorted() const {
@@ -97,7 +259,7 @@ void Graph::removeEdge(Edge e)
 
 const bool Graph::operator==(const Graph& other) const
 {
-	/*if (other.size() != this->size()) {
+	if (other.size() != this->size()) {
 		return false;
 	}
 	if (other.rightVerticesCount != this->rightVerticesCount) {
@@ -107,15 +269,16 @@ const bool Graph::operator==(const Graph& other) const
 		return false;
 	}
 
+	if (edges.size() != other.edges.size()) {
+		return false;
+	}
+
 	for (auto edge : other.edges) {
-		if (!this->containsEdge(edge)) {
+		if (edges.find(edge) == edges.end()) {
 			return false;
 		}
-		if (this->edgeCopiesCount(edge) != other.edgeCopiesCount(edge)) {
-			return false;
-		}
-	}*/
-	return false;
+	}
+	return true;
 }
 
 void Graph::tarjanStep(Tarjan& t, Vertex v)

@@ -12,7 +12,7 @@ protected:
 public:
 	Multigraph(Graph source);
 
-	void remapColors(std::map<Vertex, Vertex> mapping);
+	void remapColors(std::map<Vertex, Vertex> mapping) override;
 
 	void sort();
 

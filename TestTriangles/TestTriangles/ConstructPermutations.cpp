@@ -55,7 +55,7 @@ TriangleSet genSetFromBijection(GraphObject first, GraphObject second, std::vect
 	for (int i = 0; i < bijection.size(); i++)
 	{
 		Color r = index;
-		Color l;
+		Color l = -1;
 		int count = 0;
 		for (auto edge : first.edges[index])
 		{
@@ -74,7 +74,7 @@ TriangleSet genSetFromBijection(GraphObject first, GraphObject second, std::vect
 			count++;
 		}
 
-		Color h;
+		Color h = -1;
 
 		int count2 = 0;
 		for (auto edge : second.edges[index])
@@ -90,6 +90,9 @@ TriangleSet genSetFromBijection(GraphObject first, GraphObject second, std::vect
 		t.left = l;
 		t.top = h;
 		t.type = (TriangleType)(index % 2);
+
+		assert(t.top != -1);
+		assert(t.left != -1);
 
 		if (result.triangles[index].find(t) != result.triangles[index].end()) {
 			StatsManager::addTooSmallTriangles();
@@ -289,87 +292,6 @@ void checkNextPermutationStep(TriangleSet current,
 		current.triangles[workingIndex].erase(t);
 
 	}
-}
-
-void saveTriangles(std::vector<TriangleSet> allSets, std::string path)
-{
-	int count = 0;
-	int filesCount = 0;
-
-	/*std::stringstream ss;
-	ss << filesCount;
-	std::string filename;
-	ss >> filename;*/
-	std::string filename = "allSets";
-
-
-	std::set<std::set<Square>> tilesets;
-
-	for (TriangleSet T : allSets)
-	{
-		StatsManager::addSaved();
-		std::set<Square> tileset;
-		count++;
-		for (Color i = 0; i < T.rightColorsCount; i++)
-		{
-			for (auto tr1 : T.triangles[i * 2])
-			{
-				for (auto tr2 : T.triangles[i * 2 + 1])
-				{
-					Square s;
-					s.sides.resize(4);
-					s.sides[0] = tr1.left;
-					s.sides[1] = tr2.left;
-					s.sides[2] = tr1.top;
-					s.sides[3] = tr2.top;
-					
-					tileset.insert(s);
-				}
-			}
-			
-		}
-		if (tileset.size() >= 11) {
-			if (tilesets.find(tileset) != tilesets.end()) {
-				StatsManager::addAlreadyFound();
-			}
-			tilesets.insert(tileset);
-		}
-		else
-		{
-			StatsManager::addTooSmallSquares();
-		}
-		/*if (count > 1024) {
-			count = 0;
-			resultFile.flush();
-			resultFile.close();
-			filesCount++;
-
-			std::stringstream ss1;
-			ss1 << filesCount;
-			std::string filename1;
-			ss1 >> filename1;
-			resultFile.open(path + "\\" + filename1 + ".txt", std::ios_base::out);
-		}*/
-		
-	}
-
-
-	std::ofstream resultFile;
-	resultFile.open(path + "\\" + filename + ".txt", std::ios_base::app);
-
-	for (auto tileset : tilesets)
-	{
-		StatsManager::addSavedSquare();
-		for (Square s : tileset)
-		{
-			resultFile << s.sides[0] << " " << s.sides[1] << " " << s.sides[2] << " " << s.sides[3] << " ";
-		}
-
-		resultFile << "\n";
-	}
-
-	resultFile.close();
-	
 }
 
 GraphObject uploadGraph(std::string path, int rightColorsCount, int leftColorsCount) {
