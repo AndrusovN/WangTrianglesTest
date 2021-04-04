@@ -321,10 +321,14 @@ void Multigraph::save(std::string root) const
     ss << rightVerticesCount;
     std::string rvCount;
     ss >> rvCount;
-    saveDir += "\\" + rvCount;
 
-    if (!std::filesystem::exists(saveDir) || !std::filesystem::is_directory(saveDir)) {
-        std::filesystem::create_directory(saveDir);
+    std::filesystem::path dir(saveDir);
+
+    dir /= std::filesystem::path(rvCount);
+    //saveDir += "\\" + rvCount;
+
+    if (!std::filesystem::exists(dir) || !std::filesystem::is_directory(dir)) {
+        std::filesystem::create_directory(dir);
     }
 
     std::string hash = "";
@@ -345,10 +349,11 @@ void Multigraph::save(std::string root) const
         hash += i == leftVerticesCount + rightVerticesCount - 1 ? "" : "_";
     }
 
-    saveDir += "\\" + hash;
+    dir /= std::filesystem::path(hash);
+    //saveDir += "\\" + hash;
 
-    if (!std::filesystem::exists(saveDir) || !std::filesystem::is_directory(saveDir)) {
-        std::filesystem::create_directory(saveDir);
+    if (!std::filesystem::exists(dir) || !std::filesystem::is_directory(dir)) {
+        std::filesystem::create_directory(dir);
     }
 
     std::string scolors = "";
@@ -364,10 +369,10 @@ void Multigraph::save(std::string root) const
 
     scolors += "_" + maxDuplicates;
 
-    saveDir += "\\" + scolors;
+    dir /= std::filesystem::path(scolors);
 
-    if (!std::filesystem::exists(saveDir) || !std::filesystem::is_directory(saveDir)) {
-        std::filesystem::create_directory(saveDir);
+    if (!std::filesystem::exists(dir) || !std::filesystem::is_directory(dir)) {
+        std::filesystem::create_directory(dir);
     }
 
     int filesCount = 0;
@@ -382,12 +387,12 @@ void Multigraph::save(std::string root) const
     ss3 >> filename;
     filename += ".graph";
 
-    saveDir += "\\" + filename;
+    dir /= std::filesystem::path(filename);
 
     //std::cout << "Saving graph to " << saveDir << std::endl;
 
     std::ofstream file;
-    file.open(saveDir, std::ios_base::out);
+    file.open(dir, std::ios_base::out);
     int index = 0;
     for (auto edge : edges)
     {

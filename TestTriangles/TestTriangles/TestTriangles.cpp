@@ -84,12 +84,18 @@ void testAll(std::string path, int rightColorsCount)
 					continue;
 				}
 
-				std::string fdir = folder.path().string() + "\\" + *ptr;
-				std::string sdir = folder.path().string() + "\\" + *s_ptr;
+				std::filesystem::path fdir = folder.path();
+				fdir /= std::filesystem::path(*ptr);
+
+				std::filesystem::path sdir = folder.path();
+				fdir /= std::filesystem::path(*s_ptr);
+
+				//std::string fdir = folder.path().string() + "\\" + *ptr;
+				//std::string sdir = folder.path().string() + "\\" + *s_ptr;
 
 
 				//Запускаем проверку всех файлов
-				compareAll(fdir, sdir, rightColorsCount, firstLeftCount, secondLeftCount);
+				compareAll(fdir.string(), sdir.string(), rightColorsCount, firstLeftCount, secondLeftCount);
 			}
 		}
 	}

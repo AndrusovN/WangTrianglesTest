@@ -29,7 +29,10 @@ void Saver::save()
 
 	std::ofstream resultFile;
 
-	resultFile.open(savePath + "\\" + filename + ".txt", std::ios_base::out);
+	std::filesystem::path saveDir(savePath);
+	saveDir /= (filename + ".txt");
+
+	resultFile.open(saveDir, std::ios_base::out);
 
 	for (auto tileset : squareSets)
 	{
