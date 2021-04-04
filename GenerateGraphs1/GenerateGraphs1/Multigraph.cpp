@@ -376,7 +376,10 @@ void Multigraph::save(std::string root) const
     }
 
     int filesCount = 0;
-    for (const auto& file : std::filesystem::directory_iterator(saveDir)) {
+    
+    //std::cout << dir.string() << std::endl;
+
+    for (const auto& file : std::filesystem::directory_iterator(dir)) {
         filesCount++;
     }
 
