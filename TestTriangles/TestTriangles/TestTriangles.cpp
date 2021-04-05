@@ -39,9 +39,6 @@ int main()
 
 	testAll(path, colorsCount);
 	StatsManager::show();
-
-	std::cout << "Программа завершена, нажмите любую клавишу" << std::endl;
-	std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }
 
 void testAll(std::string path, int rightColorsCount)

@@ -26,12 +26,12 @@ void clearSet(std::set<T>& q) {
 	std::swap(q, empty);
 }
 
-void Saver::save()
+void Saver::save(bool forceRun)
 {
 	fileMutex.lock();
 	squareTilesetsMutex.lock();
 
-	if (squareSets.size() < MAX_TILESETS_COUNT) {
+	if (squareSets.size() < MAX_TILESETS_COUNT && !forceRun) {
 		fileMutex.unlock();
 		squareTilesetsMutex.unlock();
 		return;
@@ -95,7 +95,7 @@ void Saver::finish()
 	squareTilesetsMutex.unlock();
 	tilesetsQueueMutex.unlock();
 
-	save();
+	save(true);
 }
 
 void Saver::process() {

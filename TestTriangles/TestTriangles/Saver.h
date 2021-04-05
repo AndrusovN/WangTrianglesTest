@@ -35,7 +35,7 @@ public:
 
 	static void process();
 
-	static void save();
+	static void save(bool forceRun = false);
 
 	static void finish();
 };
