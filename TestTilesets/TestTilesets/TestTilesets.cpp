@@ -18,6 +18,8 @@ void TestOne(std::string path);
 // Основная функция! Проверка всех тайлсетов из файла (1 строка = 1 тайлсет)
 std::vector<Tileset> TestAllFromFile(std::string path);
 
+std::vector<Tileset> TestAllFromFiles(std::string dir);
+
 // Сохранение списка кандидатов в отдельный файл по пути path
 void save(std::vector<Tileset> candidates, std::string path);
 
@@ -27,7 +29,7 @@ int main()
 	setlocale(LC_ALL, "Russian");
 
 	//Получаем основную информацию
-	std::cout << "Тестировать файл (0) или все файлы из папки (1) или все тайлсеты из файла (2): \n";
+	std::cout << "Тестировать файл (0), или все файлы из папки (1), или все тайлсеты из файла (2), или все тайлсеты из файлов (3): \n";
 
 	int answer;
 	std::cin >> answer;
@@ -54,6 +56,13 @@ int main()
 		candidates = TestAllFromFile(path);
 		save(candidates, "candidates.txt");
 		break;
+	case 3: {
+		std::cout << "Введите путь к папке:\n";
+		std::cin >> path;
+		candidates = TestAllFromFiles(path);
+		save(candidates, "candidates.txt");
+		break;
+	}
 	default:
 		break;
 	}
@@ -67,13 +76,13 @@ void TestAllFromDir(std::string dir) {
 	for (const auto & entry : std::filesystem::directory_iterator(dir))
 	{
 		if (!entry.is_directory()) {
-			TestOne(dir + "\\" + entry.path().filename().string());
+			TestOne(entry.path().string());
 		}
 	}
 }
 
 void TestOne(std::string path) {
-	std::cout << "Проверка набора из файла " + path << std::endl;
+	std::cout << "Проверка наборов из файла " + path << std::endl;
 
 	Tileset W = Upload(path);
 
@@ -175,6 +184,20 @@ std::vector<Tileset> TestAllFromFile(std::string path)
 	}
 
 	return candidates;
+}
+
+std::vector<Tileset> TestAllFromFiles(std::string dir)
+{
+	std::vector<Tileset> result;
+	//Идем по всем файлам в папке и вызываем функцию тестирования одного файла
+	for (const auto& entry : std::filesystem::directory_iterator(dir))
+	{
+		if (!entry.is_directory()) {
+			std::vector<Tileset> res = TestAllFromFile(entry.path().string());
+			result.insert(result.end(), res.begin(), res.end());
+		}
+	}
+	return result;
 }
 
 void save(std::vector<Tileset> candidates, std::string path)

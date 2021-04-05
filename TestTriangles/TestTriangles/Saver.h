@@ -23,11 +23,14 @@ class Saver {
 
 	static const int WAIT_TIME;
 	static const std::string savePath;
-	static const int MAX_TILESETS_COUNT;
+	static int MAX_TILESETS_COUNT;
+	static int MAX_QUEUE_SIZE;
 
 	static void processTileset(TriangleSet& S);
 
 public:
+	static void setup(int tilesetsCount);
+
 	static void addToProcessQueue(std::vector<TriangleSet> sets);
 
 	static void process();

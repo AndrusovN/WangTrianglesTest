@@ -9,14 +9,33 @@ std::mutex Saver::finishedMutex;
 int Saver::filesCount = 0;
 bool Saver::finished = false;
 
-const int Saver::WAIT_TIME = 200;
+const int Saver::WAIT_TIME = 100;
 const std::string Saver::savePath = "res";
-const int Saver::MAX_TILESETS_COUNT = (int)1e7;
+int Saver::MAX_TILESETS_COUNT = (int)1e5;
+int Saver::MAX_QUEUE_SIZE = (int)1e5;
+
+template <class T>
+void clearQueue(std::queue<T>& q) {
+	std::queue<T> empty;
+	std::swap(q, empty);
+}
+
+template <class T>
+void clearSet(std::set<T>& q) {
+	std::set<T> empty;
+	std::swap(q, empty);
+}
 
 void Saver::save()
 {
 	fileMutex.lock();
 	squareTilesetsMutex.lock();
+
+	if (squareSets.size() < MAX_TILESETS_COUNT) {
+		fileMutex.unlock();
+		squareTilesetsMutex.unlock();
+		return;
+	}
 
 	std::string filename = "allSets_part_";
 
@@ -50,7 +69,7 @@ void Saver::save()
 
 	std::cout << "Saved and cleared collection of " << squareSets.size() << " tilesets\n";
 
-	squareSets.clear();
+	clearSet(squareSets);
 
 	fileMutex.unlock();
 	squareTilesetsMutex.unlock();
@@ -80,6 +99,7 @@ void Saver::finish()
 }
 
 void Saver::process() {
+
 	while (true) {
 		finishedMutex.lock();
 		if (finished) {
@@ -97,19 +117,21 @@ void Saver::process() {
 			needToWait = true;
 		}
 		else {
-			TriangleSet current = toProcess.front();
-			toProcess.pop();
+			do {
+				TriangleSet current = toProcess.front();
+				toProcess.pop();
 
-			processTileset(current);
+				processTileset(current);
+
+			} while (toProcess.size() > MAX_QUEUE_SIZE);
 		}
-
-		squareTilesetsMutex.unlock();
-		tilesetsQueueMutex.unlock();
-
 		if (squareSets.size() > MAX_TILESETS_COUNT) {
 			std::thread saveThread(save);
 			saveThread.detach();
 		}
+
+		squareTilesetsMutex.unlock();
+		tilesetsQueueMutex.unlock();
 
 		if (needToWait) {
 			std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME));
@@ -149,6 +171,12 @@ void Saver::processTileset(TriangleSet& S)
 	{
 		StatsManager::addTooSmallSquares();
 	}
+}
+
+void Saver::setup(int tilesetsCount)
+{
+	MAX_TILESETS_COUNT = tilesetsCount;
+	MAX_QUEUE_SIZE = tilesetsCount;
 }
 
 void Saver::addToProcessQueue(std::vector<TriangleSet> sets) {

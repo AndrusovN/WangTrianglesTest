@@ -5,6 +5,11 @@
 struct Square {
 	std::vector<Color> sides;
 
+	~Square() {
+		sides.clear();
+		sides.shrink_to_fit();
+	}
+
 	bool operator < (const Square& other) const {
 		return (sides < other.sides);
 	}

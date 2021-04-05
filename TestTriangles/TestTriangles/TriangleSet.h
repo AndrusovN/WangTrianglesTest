@@ -17,6 +17,11 @@ struct TriangleSet {
 
 	bool isSimplePeriodic(Color rightMatchingColor = 0);
 
+	~TriangleSet() {
+		triangles.clear();
+		triangles.shrink_to_fit();
+	}
+
 	int size() {
 		int base = sizeof(std::vector<std::set<triangle>>);
 		int base2 = sizeof(std::set<triangle>);

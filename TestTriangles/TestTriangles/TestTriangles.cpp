@@ -4,7 +4,8 @@
 #include "ConstructPermutations.h"
 #include "Saver.h"
 
-const unsigned int MAX_TILESETS_IN_MEMORY = 1000000;
+//const unsigned int MAX_TILESETS_IN_MEMORY = 1000000;
+int MAX_THREADS_COUNT;
 
 //Проверяет все комбинации графов из папки path с rightColorsCount вершин в правой доле
 void testAll(std::string path, int rightColorsCount);
@@ -27,6 +28,14 @@ int main()
 	int colorsCount;
 	std::cout << "Введите количество цветов на правой доле графов:\n";
 	std::cin >> colorsCount;
+
+	std::cout << "Введите максимальное количество потоков:\n";
+	std::cin >> MAX_THREADS_COUNT;
+
+	std::cout << "Введите размер буфера тайлсетов:\n";
+	int bufferSize;
+	std::cin >> bufferSize;
+	Saver::setup(bufferSize);
 
 	testAll(path, colorsCount);
 	StatsManager::show();
@@ -96,6 +105,7 @@ void testAll(std::string path, int rightColorsCount)
 
 				//Запускаем проверку всех файлов
 				compareAll(fdir.string(), sdir.string(), rightColorsCount, firstLeftCount, secondLeftCount);
+				//std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 			}
 		}
 	}
@@ -147,34 +157,33 @@ void compareAll(std::string firstDir, std::string secondDir, int rightColorsCoun
 	{
 		for (int i = 0; i < currentThreads.size(); i++)
 		{
-			if (currentThreads[i]->joinable()) {
-				currentThreads[i]->join();
-				delete currentThreads[i];
-				currentThreads.erase(currentThreads.begin() + i);
+			currentThreads[i]->join();
+			delete currentThreads[i];
+			//currentThreads.erase(currentThreads.begin() + i);
 
-				if (temporaries[i]->size() > 0) {
-					std::thread saveThread(Saver::addToProcessQueue, *temporaries[i]);
-					saveThread.detach();
-				}
-
-				delete temporaries[i];
-
-				temporaries.erase(temporaries.begin() + i);
-				freeGraphs.insert(associated[i]);
-				associated.erase(associated.begin() + i);
+			if (temporaries[i]->size() > 0) {
+				std::thread saveThread(Saver::addToProcessQueue, *temporaries[i]);
+				saveThread.detach();
 			}
+
+			delete temporaries[i];
+
+			//temporaries.erase(temporaries.begin() + i);
+			//freeGraphs.insert(associated[i]);
+			//associated.erase(associated.begin() + i);
 		}
 
-		if (graphs1.size() == 0) {
-			break;
-		}
+		currentThreads.clear();
+		temporaries.clear();
 
-		while (currentThreads.size() < MAX_THREADS_COUNT && graphs1.size() > 0) {
+		if (graphs1.size() == 0) break;
+
+		for (int i = 0; i < MAX_THREADS_COUNT && graphs1.size() > 0; i++) {
 			std::vector<TriangleSet>* temp = new std::vector<TriangleSet>();
 
-			associated.push_back(*freeGraphs.begin());
-			std::thread* nThread = new std::thread(compareWithGraph, graphs1.back(), graphsForElements[*freeGraphs.begin()], temp);
-			freeGraphs.erase(freeGraphs.begin());
+			//associated.push_back(*freeGraphs.begin());
+			std::thread* nThread = new std::thread(compareWithGraph, graphs1.back(), graphsForElements[i], temp);
+			//freeGraphs.erase(freeGraphs.begin());
 			currentThreads.push_back(nThread);
 			temporaries.push_back(temp);
 			graphs1.pop_back();
