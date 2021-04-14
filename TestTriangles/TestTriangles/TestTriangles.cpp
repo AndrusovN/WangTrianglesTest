@@ -128,6 +128,8 @@ void testAll(std::string path, int rightColorsCount)
 }
 
 void compareWithGraph(GraphObject current, std::vector<GraphObject> others, std::vector<TriangleSet>* result) {
+	std::cout << "CompareWithGraph\n";
+	std::cout.flush();
 	for (auto graph2 : others)
 	{
 		TriangleSet empty = TriangleSet();
