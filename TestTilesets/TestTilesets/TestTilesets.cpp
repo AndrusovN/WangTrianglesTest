@@ -1,6 +1,7 @@
 ﻿#include <iostream>
 #include <filesystem>
 #include <string>
+#include <thread>
 #include <sstream>
 
 // Включает или отключает вывод дополнительной информации о процессе тестирования в консоль
@@ -8,6 +9,9 @@
 
 #include "Test.h"
 #include "TilesUploader.h"
+
+int MAX_THREADS_COUNT = 10;
+int BLOCK_SIZE = 16;
 
 // Проверка всех тайлсетов из папки (1 файл в папке = 1 тайлсет)
 void TestAllFromDir(std::string dir);
@@ -59,6 +63,10 @@ int main()
 	case 3: {
 		std::cout << "Введите путь к папке:\n";
 		std::cin >> path;
+		std::cout << "Введите макс. количество потоков:\n";
+		std::cin >> MAX_THREADS_COUNT;
+		std::cout << "Введите размер блока\n";
+		std::cin >> BLOCK_SIZE;
 		candidates = TestAllFromFiles(path);
 		save(candidates, "candidates.txt");
 		break;
@@ -117,6 +125,38 @@ void TestOne(std::string path) {
 	}
 }
 
+void TestBlock(std::vector<Tileset> block, std::vector<Tileset>* candidates) {
+
+    for (auto T : block) {
+        //Запускаем алгоритм тестирования
+        std::vector<Tileset> onlyTileset = std::vector<Tileset>();
+        onlyTileset.push_back(T);
+        int resultSize = 0;
+        ResultCode result = TestAperiodic(onlyTileset, resultSize);
+
+        StatsManager::changeWidth(resultSize);
+
+        //Обрабатываем результаты
+        switch (result)
+        {
+            case ResultCode_periodic: {
+                //Все ок, просто продолжаем
+                break;
+            }
+            case ResultCode_tooSmall: {
+                //Все ок, просто продолжаем
+                break;
+            }
+            default:
+                //Проверить не удалось. Сохраняем как кандидата
+                std::cout << "Не удалось проверить тайлсет!\n";
+                candidates->push_back(T);
+                break;
+        }
+
+    }
+}
+
 std::vector<Tileset> TestAllFromFile(std::string path)
 {
 	std::ifstream file;
@@ -128,6 +168,9 @@ std::vector<Tileset> TestAllFromFile(std::string path)
 
 	// Количество проверенных наборов. Используется для вывода информации.
 	int count = 0;
+
+	std::vector<std::vector<Tileset>> source(MAX_THREADS_COUNT, std::vector<Tileset>());
+
 	//Читаем каждую строку файла
 	while (std::getline(file, data)) {
 		std::istringstream ss(data);
@@ -151,37 +194,50 @@ std::vector<Tileset> TestAllFromFile(std::string path)
 			T.AddTile(toAdd);
 		} while (color != "");
 
-		//Запускаем алгоритм тестирования
-		std::vector<Tileset> onlyTileset = std::vector<Tileset>();
-		onlyTileset.push_back(T);
-		int resultSize = 0;
-		ResultCode result = TestAperiodic(onlyTileset, resultSize);
+		bool needTest = false;
+        for (int i = 0; i < MAX_THREADS_COUNT; i++) {
+            if(source[i].size() < BLOCK_SIZE) {
+                source[i].push_back(T);
+                if(i == MAX_THREADS_COUNT - 1 && source[i].size() == BLOCK_SIZE) {
+                    needTest = true;
+                }
+                break;
+            }
+        }
 
-		StatsManager::changeWidth(resultSize);
+        if(needTest) {
+            std::vector<std::thread*> threads(MAX_THREADS_COUNT);
+            std::vector<std::vector<Tileset>> results(MAX_THREADS_COUNT);
+            for (int i = 0; i < MAX_THREADS_COUNT; ++i) {
+                threads[i] = new std::thread(TestBlock, source[i], &results[i]);
+            }
 
-		count++;
-		if (count % 1000 == 0) {
-			std::cout << "Проверено " << count << " наборов\n";
-		}
+            for (int i = 0; i < MAX_THREADS_COUNT; ++i) {
+                threads[i]->join();
+                candidates.insert(candidates.end(), results[i].begin(), results[i].end());
+            }
 
-		//Обрабатываем результаты
-		switch (result)
-		{
-		case ResultCode_periodic: {
-			//Все ок, просто продолжаем
-			break;
-		}
-		case ResultCode_tooSmall: {
-			//Все ок, просто продолжаем
-			break;
-		}
-		default:
-			//Проверить не удалось. Сохраняем как кандидата
-			std::cout << "Не удалось проверить тайлсет!\n";
-			candidates.push_back(T);
-			break;
-		}
+            source.clear();
+            source.shrink_to_fit();
+            source.resize(MAX_THREADS_COUNT);
+        }
+
+        count++;
+        if (count % 1000 == 0) {
+            std::cout << "Проверено " << count << " наборов\n";
+        }
 	}
+
+    std::vector<std::thread*> threads(MAX_THREADS_COUNT);
+    std::vector<std::vector<Tileset>> results(MAX_THREADS_COUNT);
+    for (int i = 0; i < MAX_THREADS_COUNT; ++i) {
+        threads[i] = new std::thread(TestBlock, source[i], &results[i]);
+    }
+
+    for (int i = 0; i < MAX_THREADS_COUNT; ++i) {
+        threads[i]->join();
+        candidates.insert(candidates.end(), results[i].begin(), results[i].end());
+    }
 
 	return candidates;
 }

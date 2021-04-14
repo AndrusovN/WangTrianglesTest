@@ -48,7 +48,7 @@ void Saver::save(bool forceRun)
 
 	std::ofstream resultFile;
 
-	std::filesystem::path saveDir(savePath);
+	std::filesystem::path saveDir = std::filesystem::path(savePath);
 	saveDir /= (filename + ".txt");
 
 	resultFile.open(saveDir, std::ios_base::out);
@@ -125,13 +125,14 @@ void Saver::process() {
 
 			} while (toProcess.size() > MAX_QUEUE_SIZE);
 		}
-		if (squareSets.size() > MAX_TILESETS_COUNT) {
-			std::thread saveThread(save);
-			saveThread.detach();
-		}
 
-		squareTilesetsMutex.unlock();
-		tilesetsQueueMutex.unlock();
+        if (squareSets.size() > MAX_TILESETS_COUNT) {
+            std::thread saveThread = std::thread(save, false);
+            saveThread.detach();
+        }
+
+        squareTilesetsMutex.unlock();
+        tilesetsQueueMutex.unlock();
 
 		if (needToWait) {
 			std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME));
@@ -173,10 +174,10 @@ void Saver::processTileset(TriangleSet& S)
 	}
 }
 
-void Saver::setup(int tilesetsCount)
+void Saver::setup(int tilesetsCount, int queueSize)
 {
 	MAX_TILESETS_COUNT = tilesetsCount;
-	MAX_QUEUE_SIZE = tilesetsCount;
+	MAX_QUEUE_SIZE = queueSize;
 }
 
 void Saver::addToProcessQueue(std::vector<TriangleSet> sets) {

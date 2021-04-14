@@ -29,7 +29,7 @@ class Saver {
 	static void processTileset(TriangleSet& S);
 
 public:
-	static void setup(int tilesetsCount);
+	static void setup(int tilesetsCount, int queueSize);
 
 	static void addToProcessQueue(std::vector<TriangleSet> sets);
 

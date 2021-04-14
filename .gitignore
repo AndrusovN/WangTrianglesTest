@@ -3,6 +3,10 @@
 *.vcxproj
 *.user
 *.filters
+*.out
+TestTilesets/TestTilesets/.idea
+TestTriangles/TestTriangles/.idea
+TestTriangles/TestTriangles/4.13.3
 GenerateGraphs1/Debug
 GenerateGraphs1/x64
 GenerateGraphs1/.vs
@@ -10,6 +14,7 @@ GenerateGraphs1/GenerateGraphs1/Debug
 GenerateGraphs1/GenerateGraphs1/x64
 GenerateGraphs1/GenerateGraphs1/Graphs
 GenerateGraphs1/GenerateGraphs1/FullGraphs
+GenerateGraphs1/GenerateGraphs1/out/FullGraphs
 TestTilesets/.vs
 TestTilesets/x64
 TestTilesets/TestTilesets/x64

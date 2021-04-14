@@ -1,10 +1,11 @@
 ﻿#include <iostream>
 #include <filesystem>
 #include <thread>
+#include <ctime>
 #include "ConstructPermutations.h"
 #include "Saver.h"
 
-//const unsigned int MAX_TILESETS_IN_MEMORY = 1000000;
+unsigned int MAX_TILESETS_IN_MEMORY;
 int MAX_THREADS_COUNT;
 
 //Проверяет все комбинации графов из папки path с rightColorsCount вершин в правой доле
@@ -18,6 +19,7 @@ void compareAll(std::string firstDir, std::string secondDir, int rightColorsCoun
 
 int main()
 {
+    long long timerStart = std::clock();
 	setlocale(LC_ALL, "Russian");
 	StatsManager::init();
 	//Получаем основные данные, запускаем проверку
@@ -32,13 +34,28 @@ int main()
 	std::cout << "Введите максимальное количество потоков:\n";
 	std::cin >> MAX_THREADS_COUNT;
 
-	std::cout << "Введите размер буфера тайлсетов:\n";
+	std::cout << "Введите размер буфера квадратных тайлсетов:\n";
 	int bufferSize;
 	std::cin >> bufferSize;
-	Saver::setup(bufferSize);
+
+	std::cout << "Введите размер буфера треугольных тайлсетов:\n";
+	int queueSize;
+	std::cin >> queueSize;
+
+	MAX_TILESETS_IN_MEMORY = queueSize;
+	Saver::setup(bufferSize, queueSize);
 
 	testAll(path, colorsCount);
 	StatsManager::show();
+
+	long long timerEnd = std::clock();
+	long long  totalTime = (timerEnd - timerStart) / CLOCKS_PER_SEC;
+	long long minutes = totalTime / 60;
+	long long seconds = totalTime % 60;
+	long long hours = minutes / 60;
+	minutes %= 60;
+
+    std::cout << "Program executed in " << hours << ":" << minutes << ":" << seconds << std::endl;
 }
 
 void testAll(std::string path, int rightColorsCount)
@@ -119,6 +136,11 @@ void compareWithGraph(GraphObject current, std::vector<GraphObject> others, std:
 		StatsManager::addChecked();
 		//createAllBijections(current, graph2, *result);
 		checkNextPermutationStep(empty, current, graph2, *result);
+
+		if (result->size() > MAX_TILESETS_IN_MEMORY) {
+			Saver::addToProcessQueue(*result);
+			result->clear();
+		}
 	}
 }
 
