@@ -128,8 +128,8 @@ void testAll(std::string path, int rightColorsCount)
 }
 
 void compareWithGraph(GraphObject current, std::vector<GraphObject> others, std::vector<TriangleSet>* result) {
-	std::cout << "CompareWithGraph\n";
-	std::cout.flush();
+	//std::cout << "CompareWithGraph\n";
+	//std::cout.flush();
 	for (auto graph2 : others)
 	{
 		TriangleSet empty = TriangleSet();
@@ -165,7 +165,7 @@ void compareAll(std::string firstDir, std::string secondDir, int rightColorsCoun
 	std::vector<std::vector<GraphObject>> graphsForElements;
 	std::set<int> freeGraphs;
 
-	const int MAX_THREADS_COUNT = 10;
+	//const int MAX_THREADS_COUNT = 10;
 
 	for (int i = 0; i < MAX_THREADS_COUNT; i++)
 	{

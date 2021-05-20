@@ -39,7 +39,7 @@ void MainFunction(Graph g, int expectedSize, std::vector<Graph>& savedGraphs, Ed
                     if (T.toRemove.size() == 0) {
                         //g.save("Graphs");
                         //tilesSaved++;
-                        StatsManager::addSkeletonGraphsCount();
+                        
 
                         bool alreadySaved = false;
                         for (Graph G : savedGraphs)
@@ -50,6 +50,7 @@ void MainFunction(Graph g, int expectedSize, std::vector<Graph>& savedGraphs, Ed
                             }
                         }
                         if (!alreadySaved) {
+                            StatsManager::addSkeletonGraphsCount();
                             int tilesAdded = g.saveAllVariants(T, expectedSize - g.size(), "FullGraphs");
                             savedGraphs.push_back(g);
                             StatsManager::addGraphsSaved(tilesAdded);
